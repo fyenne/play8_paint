@@ -1,0 +1,447 @@
+---
+title: "billing data walk through"
+author: "Siming Yan"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+ 
+output:
+  flexdashboard::flex_dashboard:
+    # orientation: rows
+    vertical_layout: scroll
+    # css: bootstrap.min.css
+    theme:
+      bslib: true
+      version: 4
+      bg: "#ff7f50"
+      fg: "#191960"
+      primary: "#ED79F9"
+      navbar-bg: "#3ADAC6"
+---
+
+<style>
+.colored {
+  background-color: #FAFAFA;
+}
+</style>
+
+
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
+# devtools::source_gist('284671997992aefe295bed34bb53fde6', filename = 'backstitch.R')
+```
+
+```{r setup2, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+require(reshape2)
+library(lubridate)
+# library(highcharter) # Interactive data visualizations
+library(viridis)
+# library(DT)
+library(lfe)
+# library(stargazer)
+library(plotly)
+library(summarytools)
+library(kableExtra)
+library(highcharter)
+
+kbt <- function(...){
+  knitr::kable(..., format.args = list(big.mark = ',', scientific = F)) %>%
+    kableExtra::kable_styling(c("striped", "condensed"),
+                               full_width = F,
+                               position = "center",
+                               row_label_position = "c") %>%
+   row_spec(0, bold = T)
+}
+
+stg <- function(...){
+  stargazer::stargazer(..., 
+          type = "text",
+          # style = "qje",
+          # title = "daily_kwh ~ post:encouraged|customer_id + no.bill|0|customer_id",
+          keep.stat = c("n", "ser"),
+          digits = 5)
+}
+```
+
+ 
+
+```{r, include=FALSE}
+getwd()
+list.files(path = "./data_out/")
+bca = read.csv("./data_out/bca_without_mail.csv", encoding = "utf-8")
+
+ 
+```
+
+
+Page 1 
+=======================================================================
+
+### bms_bill_amount on BG & time {.no-padding}
+
+```{r, echo = F}
+plt1 = df3 %>% 
+  select(c(bms_industry, bms_bill_end_date, bms_bill_amount)) %>%
+  distinct() %>% 
+  group_by(bms_industry, bms_bill_end_date) %>% 
+  summarise( bill_amount = sum(bms_bill_amount))
+plt1$bms_bill_end_date = ymd(plt1$bms_bill_end_date %>% paste0("01"))
+plot_ly(data = plt1,
+        x = ~bms_bill_end_date,
+        y = ~bms_industry,
+        z = ~bill_amount,
+        color = ~bms_industry,
+        type =  'scatter3d' ,
+        mode = c('lines') ,
+        lines =   list( 
+                    # color = ~bms_industry, 
+                    reverscale = FALSE)) %>% 
+# 
+    add_markers(
+      symbol = 'circle', sizemode = 'diameter') %>% 
+    layout(title= "bms_bill_amount on BG & time")
+
+```
+
+
+### bms_bill_amount on BG & time {.no-padding}
+
+
+```{r, echo = F, warning = F, message = F}
+# df3
+df4  = df3 %>% 
+  select(c(
+    bms_industry, bms_bill_end_date, category, bms_bill_amount
+    ))  
+ 
+plt2=df4 %>% group_by(category,bms_bill_end_date) %>% 
+  summarise(n(), sum_bill_amount = sum(bms_bill_amount))
+plt2$bms_bill_end_date = ymd(plt2$bms_bill_end_date %>%
+                               paste0("01"))
+plot_ly(data = plt2,
+        x = ~bms_bill_end_date,
+        y = ~category,
+        z = ~sum_bill_amount,
+        color = ~category,
+        type =  'scatter3d' ,
+        mode = c('lines'),
+        line = list(
+                    # color = turbo(8), 
+                    reverscale = FALSE)
+        ) %>% 
+
+    add_markers(
+      symbol = 'circle', sizemode = 'diameter') %>% 
+    layout(title= "bms_bill_amount on category & time")
+
+
+```
+
+### pads
+
+
+```{r, echo = F}
+plt4 = df4 %>% group_by(category,  bms_industry) %>% 
+  summarise(n(), sum_bill_amount = sum(bms_bill_amount))
+# color1 = viridis(inferno, 8)
+ 
+fig <- plot_ly()
+ 
+
+for (i in 1:5){
+ 
+    bms_industry = (plt4$bms_industry %>% unique())[i]
+    plts = plt4[plt4$bms_industry == bms_industry, ]
+    fig = fig %>% 
+      add_pie(data =  plt4[plt4$bms_industry == bms_industry, ], 
+          labels = ~category, 
+          values = ~sum_bill_amount,
+          hole = .4,
+          textinfo = 'label+percent',
+          textposition = 'inside',
+          # hoverinfo = 'text',
+          # text = ~paste0(bms_industry, sum_bill_amount),
+          name =  bms_industry ,
+          domain = list(row = 0, column = i-1),
+          marker = list(colors = 
+                          inferno(8, begin  = .2, end = .8,
+                                  direction = -1),
+                      line = list(color = '#FFFFFF', width = 1)),
+        showlegend = T) %>% 
+      layout(title= paste0((plt4$bms_industry %>% unique())[i]))
+   i = i + 1
+   
+}
+
+for (i in 6:10){
+ 
+    bms_industry = (plt4$bms_industry %>% unique())[i]
+    plts = plt4[plt4$bms_industry == bms_industry, ]
+    fig = fig %>% 
+      add_pie(data =  plt4[plt4$bms_industry == bms_industry, ], 
+          labels = ~category, 
+          values = ~sum_bill_amount,
+          hole = .4,
+          textinfo = 'label+percent',
+          textposition = 'inside',
+          # hoverinfo = 'text',
+          # text = ~paste0(bms_industry, sum_bill_amount),
+          name =  bms_industry ,
+          domain = list(row = 1, column = i-6),
+          marker = list(colors = 
+                          viridis(8, alpha = .8, direction = -1),
+                      line = list(color = '#FFFFFF', width = 1)),
+        showlegend = T) %>% 
+      layout(title=paste0((plt4$bms_industry %>% unique())[i]))
+   i = i + 1
+   
+}
+
+  
+ 
+ 
+fig <- fig %>% layout(title = "sum bms_bill_amount by category distribution by BG", 
+                      showlegend = F,
+                      grid=list(rows=2, columns=5),
+                      xaxis = list(
+                        showgrid = FALSE, 
+                        zeroline = FALSE, 
+                        showticklabels = FALSE),
+                      yaxis = list(
+                        showgrid = FALSE, 
+                        zeroline = FALSE, 
+                        showticklabels = FALSE))
+
+fig
+ 
+```
+
+Page 2 
+=======================================================================
+
+Column {data-width=2000 data-padding = 50}
+-------------------------------------
+
+
+```{r,echo = F}
+ 
+barroud = data.frame(df3 %>%
+                       group_by(bms_fee_name) %>%
+                       summarise(mean(bms_amount)) %>%
+    data.frame())
+# 
+ 
+barroud$mean.bms_amount. =log( barroud$mean.bms_amount. )
+# scale(barroud$mean.bms_amount.)
+names(barroud) = c("name", "mean_amount")
+
+
+barroud = barroud[order(barroud$mean_amount),]
+ 
+
+
+ax <- list(
+  title = "",
+  zeroline = FALSE,
+  showline = FALSE,
+  showticklabels = FALSE,
+  showgrid = FALSE
+)
+fig <- plot_ly(
+  data = barroud,
+  type = 'barpolar',
+  r = barroud$mean_amount,
+  theta = barroud$name,
+  color = barroud$mean_amount,
+  colors = cividis(108, alpha = .7, begin = .2, end = .9)
+  # colors = #colorRampPalette(brewer.pal(8, "Greens")(32)),
+  # brewer.pal(32,"Greens"),
+  # opacity = barroud$mean_price
+  # mode = 'markers'
+)  %>% layout(xaxis = ax,  showlegend = F, yaxis = ax, 
+              title =  list(
+                title = 'scaled bms_amount by secondary categories',
+                color = "green",
+                pad = list(b = 100))); fig
+
+
+```
+
+Column {data-width=500 data-padding = 50}
+-------------------------------------
+
+取对数后的平均款项, 排在前几位的分别是增值费, 各种场地费用, 空调费用, 设备和人力费用. 日后对数据价值的挖掘可以从以上几方面入手: 如何优化场地利用效率, 优化空调节能, 优化员工工作效率以换取更大的利润.
+
+Page 3 
+=======================================================================
+
+Column {data-width=2000 .no-padding}
+-------------------------------------
+
+###  bms_amount distribution
+
+```{r, echo = F, message = F}
+
+set.seed = 5290707
+# plt5
+
+
+
+plt5 = df3 %>% 
+  group_by(bms_fee_type, bms_bill_end_date, bms_customer_code) %>% 
+  summarise(n_distinct(bms_amount), sum(bms_amount))
+plt5 = plt5[sample(nrow(plt5), 600),]
+names(plt5) = c('type', 'date', 'code', 'n', 'amount')
+
+plot_ly(data = plt5, x = ~code, y = ~type, z = ~amount,
+        type = 'scatter3d', 
+        color = ~type,
+        symbol = ~code,
+        colors = viridis(45,alpha = .6),
+        mode = 'markers',
+        marker = list(size = ~log(42, n), opacity = .7)) %>%
+  layout(showlegend = FALSE, 
+         title ="single bms_amount by fee type and customer code")
+```
+
+```{r, include=F}
+in_out_wh = read.csv("./in_out_working_hour.csv")
+
+j = {}
+#  
+# 
+# func = function(names) {
+#   j = gsub('\\w+\\.', '', names)
+#   return( j )
+# }
+#  
+# func(names(in_out_wh)[1])
+ 
+
+for (i in names(in_out_wh)){
+  j = append(gsub('\\w+\\.', '', i), j)
+  
+} 
+
+names(in_out_wh) = rev(j)
+in_out_wh
+# in_out_wh$ou_code %>% unique()   # 63
+in_out_wh$month = in_out_wh$operation_day %>% substring(1,6)
+in_out_wh = in_out_wh %>% 
+  group_by(month, ou_code) %>% 
+  summarise(inb = mean(inbound_receive_qty), 
+            oub = mean(outbound_shipped_qty),
+            whour = mean(total_working_hour))
+
+# in_out_wh
+
+# df3
+
+df_reg = df3 %>% 
+  group_by(cost_center) %>% 
+  summarise(sum(bms_bill_amount))
+df_reg = df_reg[order(df_reg$`sum(bms_bill_amount)`, decreasing =T),]
+df_reg = df_reg[1:63,]
+
+df3_sub = df3[df3$cost_center %in% df_reg$cost_center,]
+df3_sub = df3_sub %>% 
+  group_by(cost_center, bms_bill_end_date) %>% 
+  summarise(mean(bms_bill_amount))
+ 
+mapping = data.frame( cost_center = df3_sub$cost_center %>% unique(), 
+                      ou_code = in_out_wh$ou_code %>% unique())
+ 
+df3_sub = merge(mapping, df3_sub, by = 'cost_center')
+in_out_wh = merge(mapping, in_out_wh, by = 'ou_code')
+df_reg = merge(df3_sub, in_out_wh, by = c('cost_center', 'ou_code'))
+names(df_reg)[4] = "bms_amount"
+# df_reg
+reg1 = felm(bms_amount ~ 
+              inb + oub + whour|bms_bill_end_date|0|ou_code + bms_bill_end_date, df_reg)
+
+```
+
+ 
+
+
+### plot working_hours ~ inbound+outbound; **四**项拟合, 移除 working_hours, inboud, outbound 高或者低于2 standard deviation 的值
+
+```{r, echo = F, message = F, warning =F}
+# df_reg
+reg12 = lm(bms_amount ~ 
+              inb + oub + I(inb^2) + I(oub^2) + 
+              I(inb^3) + I(oub^3) +
+              I(inb^4) + I(oub^4)  , df_reg)
+
+
+axis_x <- seq(min(df_reg$inb), max(df_reg$inb), by = 500000)
+axis_y <- seq(min(df_reg$oub), max(df_reg$oub), by = 500000)
+
+ 
+# axis_x
+petal_lm_surface <- expand.grid(inb = axis_x, oub = axis_y, KEEP.OUT.ATTRS = F)
+
+petal_lm_surface$Petal.Length <- predict.lm(reg12, newdata = petal_lm_surface)
+petal_lm_surface <- acast(petal_lm_surface, oub ~ inb, value.var = "Petal.Length") 
+# y ~ x
+ 
+ 
+iris_plot <- plot_ly(df_reg, 
+                     x = ~inb, 
+                     y = ~oub, 
+                     z = ~bms_amount,
+                     # text = ~Species, # EDIT: ~ added
+                     type = "scatter3d", 
+                     mode = "markers",
+                     color = 'bms_amount',
+                     colors = cividis(1055, begin = .3, end = .9)
+                     # marker = list(color = hcolors)
+                     ) %>% 
+  layout(showlegend = F)
+# and then add the surface:
+
+iris_plot <- add_trace(p = iris_plot,
+                       z = petal_lm_surface,
+                       x = axis_x,
+                       y = axis_y,
+                       type = "surface")  %>% 
+  layout(showlegend = F)
+
+iris_plot
+
+```
+
+
+  
+Page 4 summary
+=======================================================================
+
+本篇报告着眼于探究从收入角度进行数据的探究. 主要分析各类收入款项的分布情况,试图发掘潜在的,有价值的探究的方向. 
+
+***This dashboard is for overall billing data review on BDP.***
+
+* $1_{st}$ page: 
+
+**前两张图**:  
+分别分析BG的收入趋势, 和收入主要来源的一级分类.
+**第三张图**: 
+每个BG的收入分布一览. 操作, 场地, 人力等都是重头戏.
+ 
+* $2_{nd}$ page: 
+ 
+二级分类收入的情况一览. 详情见该页
+
+* $3_{rd}$ page: 
+
+抽样数据, 各个ou单个二级分类的收入分布. 对ou的收入来源简单了解.
+
+图二为仿真拟合示意图, 利用本地的出入库数量数据和工时判断与账单收益的因果关系
+
+* $4_{th}$ page: 
+
+由于文件太大了, 我本次的可视化提交发在teams群里. 很抱歉没能用PowerBi完成任务, 原因是PowerBi不支持运行高内存占用率的脚本运行. 其实在开始做可视化之前, 我做过实验, 并且确定了我通过R写的脚本是可以在PowerBi上成功运行的, 然而事与愿违, 多次尝试后, PowerBi依然报了运行能力不足的错, 报错内容如下: 基本可以确定是我脚本内的3D图像内存占用率太高的缘故. 我把脚本拆开作单个图像, 也无法运行. 所以很可惜, 只能用HTML来做展示. 
+
+在本篇的分析中, 由于数据的限制 (BMS data有些明显异常值, 我直接做了剔除. Ou_costcenter 由于costcenter code最近进行了更新, 所以无法mapping上, 等), 只是对各个BG, OU级别进行了样例分析, 初步的定位为向CEO, CDO, CFO或BG head提供的运营状况的展示, 以便于他们从这一个维度了解自身的运营情况和发掘潜在的优化成本, 维护客户的改善机会;我们账单上的收入分布是怎么样的? 这样的账单构成结构是合理的吗? 我们的客户期待他们在哪方面的成本节约? 更多的订单, 更多的劳动力投入会带来更大的收益吗? 最佳的收益/输入的平衡点(Optimizing)在哪里? 如何达成最佳的投入回报比? A/B test探测客户对各类目的收费容忍程度,等等. 在可视化的最后部分, 做了我们近期以来WMS和BMS数据的联动, 试图寻找Inbound_qty, inbound_line_count, outbound_qty, outbound_line_count, working_hour对当月的入账金额的相关性探究. 更多的研究需要更多的时间和数据来完成. 
+
+另一方面, 我也开始了做伪时间序列预测的工作, 即使用每日单个ou的第一笔订单来预测当日的订单可能达到的最大值, 预测的指标可以包括且不限于Inbound_qty, inbound_line_count, outbound_qty, outbound_line_count, working_hour. 这一方面可视化的内容还比较欠缺, 数据的处理和模型的构建依旧需要一定的时间来完成. 请耐心等待~

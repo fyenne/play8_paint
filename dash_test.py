@@ -88,15 +88,15 @@ dash app
     
 # ])
 
-fig = px.scatter(x = "contract_end_date", y= "annual_average_revenue", \
-    color = 'account_name_en',  size = 'annual_average_revenue',
-    data_frame  = contract_summary)
-fig.update_xaxes(range = list([min, max]))
-fig.update_layout(title_text="Title", showlegend = False, \
-    )
+# fig = px.scatter(x = "contract_end_date", y= "annual_average_revenue", \
+#     color = 'account_name_en',  size = 'annual_average_revenue',
+#     data_frame  = contract_summary)
+# fig.update_xaxes(range = list([min, max]))
+# fig.update_layout(title_text="Title", showlegend = False, \
+#     )
  
-fig.update_layout({'plot_bgcolor': 'rgba(0, 0, 0, 0)',\
-    'paper_bgcolor': 'rgba(0, 0, 0, 0)'})
+# fig.update_layout({'plot_bgcolor': 'rgba(0, 0, 0, 0)',\
+#     'paper_bgcolor': 'rgba(0, 0, 0, 0)'})
 
 app.layout = html.Div(children=[
                       html.Div(className='row',  # Define the row element

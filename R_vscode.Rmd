@@ -1,0 +1,29 @@
+---
+title: R_vscode
+author: siming 
+date: "2021/11/12"
+output: html_document
+---
+
+# test
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+df = mtcars
+df %>% head()
+```
+
+
+## head
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+

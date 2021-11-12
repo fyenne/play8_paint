@@ -1,0 +1,54 @@
+---
+title: "R_python"
+author: "siming"
+date: "2021/11/12"
+output: html_document
+---
+
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(reticulate)
+use_python(
+  "C:\\Users\\dscshap3808\\Miniconda3\\envs\\siming\\python.exe")
+
+```
+
+```{python, warning = False, message = F}
+import pandas as pd
+import re
+
+def data_prepare():
+    df = pd.read_csv('./data_down/dwd_dsc_d365_opportunity_df.csv', sep = '\001', encoding = 'utf_8_sig')
+    df.columns = [re.sub('^\w+.{1}', '', i) for i in list(df.columns)]
+    df['contract_end_date'] = df['contract_end_date'].str.slice(0,10).fillna(pd.NaT)
+    colname = ['annual_average_gross_profit_base', 'annual_average_gross_profit',
+        'annual_average_revenue_base', 'annual_average_revenue']
+    for i in colname:
+        df = df[~df.index.isin(df[i].str.extract('([a-zA-Z]+)').dropna().index)]
+
+    df[['annual_average_gross_profit_base', 'annual_average_gross_profit',
+        'annual_average_revenue_base', 'annual_average_revenue']] = df[['annual_average_gross_profit_base', 'annual_average_gross_profit',
+        'annual_average_revenue_base', 'annual_average_revenue']].astype(float)
+    df['contract_end_date'] = pd.to_datetime(df['contract_end_date'])
+    contract_summary = df.groupby(['account_name_en', 'contract_end_date'])[[
+        'annual_average_gross_profit_base', 'annual_average_gross_profit',
+        'annual_average_revenue_base', 'annual_average_revenue']].sum()
+    contract_summary = contract_summary.reset_index()
+    contract_summary['contract_end_yr'] = contract_summary['contract_end_date'].astype(str).str.slice(0,4)
+    return contract_summary
+
+contract_summary = data_prepare().head(65)
+contract_summary.head() 
+```
+
+
+
+```{r, message=F}
+library(tidyverse)
+py$contract_summary %>% head(15) %>% 
+  ggplot(aes(x = account_name_en, y = annual_average_revenue, color = account_name_en)) + geom_point()
+```
+

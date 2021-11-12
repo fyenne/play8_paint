@@ -5,3 +5,4 @@
 *.pyc
 *.json
 *.csv
+.Rproj.user

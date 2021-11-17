@@ -103,17 +103,18 @@ app.layout = html.Div(children=[
                                children=[
                                   html.Div(
                                       className='four columns div-user-controls',
-                                      children = [html.H2('Dash - STOCK PRICES'),
+                                      children = [html.H2('SF-DSC Financial Categories'),
                                       html.P('''Visualising time series with Plotly - Dash'''),
-                                      html.P('''Pick one or more stocks from the dropdown below.'''),
+                                      html.P('''Pick one or more customers from the dropdown below.'''),
                                       html.Div(className='div-for-dropdown',
                                         children=[
                                             dcc.Dropdown(id='customer',
-                                            options= get_options(contract_summary['account_name_en'].unique()),
-                                            multi=True,
-                                            value=[contract_summary['account_name_en'].unique()[0]],
-                                            style={'backgroundColor': '#1E1E1E'},
-                                            className='customer')
+                                            options= get_options(
+                                                contract_summary['account_name_en'].unique()),
+                                                multi=True,
+                                                value=contract_summary['account_name_en'].unique()[10:],
+                                                style={'backgroundColor': '#1E1E1E'},
+                                                className='customer')
                                             ],
                                             style={'color': '#1E1E1E'})
                                       ]
@@ -171,7 +172,7 @@ def update_timeseries(selected_dropdown_value):
                   margin={'b': 15},
                   hovermode='x',
                   autosize=True,
-                  title={'text': 'Stock Prices', 'font': {'color': 'white'}, 'x': 0.5},
+                  title={'text': 'Annual Average Revenue', 'font': {'color': 'white'}, 'x': 0.5},
                   xaxis={'range': [min_time, max_time]},
                   yaxis={'range': [0, 100000]}
               ),

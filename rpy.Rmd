@@ -48,7 +48,6 @@ contract_summary.head()
 
 ```{r, message=F}
 library(tidyverse)
-py$contract_summary %>% head(15) %>% 
-  ggplot(aes(x = account_name_en, y = annual_average_revenue, color = account_name_en)) + geom_point()
-```
+# read.csv('./plot_data.csv', sep = "\001")
+```s
 

@@ -1,8 +1,10 @@
 *.Rhistory
 *.html
-*.xlsx
+# *.xlsx
 *.pptx
 *.pyc
 *.json
-*.csv
+# *.csv
 .Rproj.user
+# /data/
+# /data_downloaded/

@@ -4,7 +4,9 @@
 *.pptx
 *.pyc
 *.json
-# *.csv
+*.csv
 .Rproj.user
 # /data/
 # /data_downloaded/
+*.pbix
+

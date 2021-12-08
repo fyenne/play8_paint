@@ -1,10 +1,15 @@
 ---
-title: "R_python"
-author: "siming"
-date: "2021/11/12"
-output: html_document
+title: "paint"
+author: "Siming Yan"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  flexdashboard::flex_dashboard:
+    vertical_layout: scroll
+    css: style.css
+    theme:
+      bslib: true
+      version: 4
 ---
-
 
 
 
@@ -16,38 +21,131 @@ use_python(
 
 ```
 
+
+```{r setup2, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+require(reshape2)
+library(lubridate)
+library(highcharter) # Interactive data visualizations
+library(viridis)
+library(reticulate)
+# Create a custom theme for the plots. 
+custom_theme <- hc_theme(
+  colors = c('#5CACEE', 'green', 'red'),
+  chart = list(
+         backgroundColor = '#FAFAFA', 
+         plotBorderColor = "black"),
+  xAxis = list(
+         gridLineColor = "E5E5E5", 
+         labels = list(style = list(color = "#333333")), 
+         lineColor = "#E5E5E5", 
+         minorGridLineColor = "#E5E5E5", 
+         tickColor = "#E5E5E5", 
+         title = list(style = list(color = "#333333"))), 
+  yAxis = list(
+         gridLineColor = "#E5E5E5", 
+         labels = list(style = list(color = "#333333")), 
+         lineColor = "#E5E5E5", 
+         minorGridLineColor = "#E5E5E5", 
+         tickColor = "#E5E5E5", 
+         tickWidth = 1, 
+         title = list(style = list(color = "#333333"))),   
+  title = list(style = list(color = '#333333', fontFamily = "Lato")),
+  subtitle = list(style = list(color = '#666666', fontFamily = "Lato")),
+  legend = list(
+         itemStyle = list(color = "#333333"), 
+         itemHoverStyle = list(color = "#FFF"), 
+         itemHiddenStyle = list(color = "#606063")), 
+  credits = list(style = list(color = "#666")),
+  itemHoverStyle = list(color = 'gray'))
+```
+
+``` {js, include =F}
+// Inverse color of navigation bar.
+$('.navbar-inverse').removeClass('navbar-inverse').addClass('navbar-default');
+```
+
+<style>
+.colored {
+  background-color: #FAFAFA;
+}
+</style>
+
+
 ```{python, warning = False, message = F}
 import pandas as pd
 import re
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+# import seaborn as sns
 
-def data_prepare():
-    df = pd.read_csv('./data_down/dwd_dsc_d365_opportunity_df.csv', sep = '\001', encoding = 'utf_8_sig')
-    df.columns = [re.sub('^\w+.{1}', '', i) for i in list(df.columns)]
-    df['contract_end_date'] = df['contract_end_date'].str.slice(0,10).fillna(pd.NaT)
-    colname = ['annual_average_gross_profit_base', 'annual_average_gross_profit',
-        'annual_average_revenue_base', 'annual_average_revenue']
-    for i in colname:
-        df = df[~df.index.isin(df[i].str.extract('([a-zA-Z]+)').dropna().index)]
+os.getcwd()
+df = pd.read_csv('./data_down/dws_dsc_customer_opportunity_monthly_kpi_1.csv')
+op = pd.read_csv('./data_down/dwd_dsc_d365_opportunity_df.csv', sep = '\001')
+df.columns = [re.sub('\w+\.', '', i) for i in list(df.columns)]
+op.columns = [re.sub('\w+\.', '', i) for i in list(op.columns)]
+df = df.fillna(0)
+# df.columns
+df['if_cooped'] = 0
+df['if_cooped'] = df['if_cooped'].where(df['contract_signed_opportunity_num'] < 1, 1) # 今年有没合作。
+cus_bf_21 = op[(op['createdon'] < '2021-11-01') & (op['milestone'] == 'Contract Signed')]['account_name_en'].unique()
+cus_bf_21 = list(cus_bf_21)
+cus_af_21 = list(df['customer_name'].unique())
+df['old_cust'] = df['customer_name'].isin(cus_bf_21)
+# df.to_csv('./data_down/dws_dsc_customer_opportunity_monthly_kpi_1.csv', index = None, encoding='utf_8_sig')
 
-    df[['annual_average_gross_profit_base', 'annual_average_gross_profit',
-        'annual_average_revenue_base', 'annual_average_revenue']] = df[['annual_average_gross_profit_base', 'annual_average_gross_profit',
-        'annual_average_revenue_base', 'annual_average_revenue']].astype(float)
-    df['contract_end_date'] = pd.to_datetime(df['contract_end_date'])
-    contract_summary = df.groupby(['account_name_en', 'contract_end_date'])[[
-        'annual_average_gross_profit_base', 'annual_average_gross_profit',
-        'annual_average_revenue_base', 'annual_average_revenue']].sum()
-    contract_summary = contract_summary.reset_index()
-    contract_summary['contract_end_yr'] = contract_summary['contract_end_date'].astype(str).str.slice(0,4)
-    return contract_summary
+plt1 = sum(df['contract_signed_opportunity_num']) / sum(df['total_opportunity_num']) # 整体的商机成功率.a
 
-contract_summary = data_prepare().head(65)
-contract_summary.head() 
+plt2 = df.query("old_cust == 1 & if_cooped == 1 & total_opportunity_num > 0").shape[0] / df.query("old_cust == 1 & total_opportunity_num > 0").shape[0] 
+# 0.592375366568915 旧客户留存率。
+
+plt3 = [df.query("old_cust == 1")['total_opportunity_num'].sum(), df.query("old_cust == 1")['total_opportunity_num'].sum() / sum(df['total_opportunity_num'])]
+
+# [967, 0.6863023420865862] 已有客户今年总商机。 已有客户商机成功率。
+
+
+plt4 = [len(set(np.intersect1d(cus_bf_21, cus_af_21))), len(cus_af_21)]  
+"""# [341, 717]  今年出现的过往的客户 vs 今年的所有"""
+
+
+plt5 = df[df['contract_signed_opportunity_num'] > 0].shape # 238 客户今年签署了合同;
+
+# print(df.head())
+```
+
+```{r}
+plt1 = data.frame(value = c(py$plt1,1- py$plt1), label = c('商机成功','商机失败'))
+plt1
 ```
 
 
-
 ```{r, message=F}
-library(tidyverse)
+# library(tidyverse)
 # read.csv('./plot_data.csv', sep = "\001")
-```s
+
+highchart() %>% 
+    hc_add_series(plt1, 
+                  hcaes(x = plt1$value, y = plt1$label, color = plt1$label), 
+                  type = "pie") %>%
+    hc_tooltip(crosshairs = TRUE, 
+               borderWidth = 1.5, 
+               headerFormat = "", 
+               pointFormat = paste0(
+                 "Cats: <b> {point.x} </b> <br> amount: <b>{point.y}</b>")) %>%
+  hc_title(text = "BMS categories amount") %>% 
+  hc_xAxis(categories = (plt1$label %>% unique()), 
+             title = list(text = "cats")) %>%
+  hc_yAxis(title = list(text = "categories data_count"),
+             allowDecimals = FALSE) %>%
+  hc_legend(enabled = FALSE) %>% 
+  hc_add_theme(custom_theme)
+
+
+```
+
+```{r}
+
+```
 

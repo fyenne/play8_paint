@@ -11,3 +11,5 @@
 *.pbix
 
 *.png
+/data_down/bca_cc_cust_rel.csv
+data_down/dwd_dsc_d365_opportunity_df.csv

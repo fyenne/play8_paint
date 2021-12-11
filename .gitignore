@@ -1,6 +1,6 @@
 *.Rhistory
 *.html
-# *.xlsx
+*.xlsx
 *.pptx
 *.pyc
 *.json
@@ -15,3 +15,4 @@
 data_down/dwd_dsc_d365_opportunity_df.csv
 data_down/smart_hr_pl_0l.csv
 data_up/lb_income_gpmargin
+data_down/~$DSC成本中心_Complete.xlsx
